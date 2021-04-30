@@ -38,6 +38,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "uart/uart.h"
+
 // define this globally (e.g. gcc -DPRINTF_INCLUDE_CONFIG_H ...) to include the
 // printf_config.h header file
 // default: undefined
@@ -952,4 +954,12 @@ int fctprintf(void (*out)(char character, void* arg), void* arg,
                              (size_t)-1, format, va);
   va_end(va);
   return ret;
+}
+
+// custom putchar function
+void _putchar(char character) {
+  if (character == '\n') {
+    uart_send('\r');
+  }
+  uart_send(character);
 }
