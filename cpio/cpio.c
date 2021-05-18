@@ -1,20 +1,39 @@
-#include "cpio.h"
+#include "cpio/cpio.h"
 
 #include <stdbool.h>
 #include <stdlib.h>
 
-bool cpio_memcmp(char* left, char* right) {
-  for (int i = 0; i < 6; i++) {
+#include "printf/printf.h"
+
+struct header {
+  char magic[6];
+  char ino[8];
+  char mode[8];
+  char uid[8];
+  char gid[8];
+  char nlink[8];
+  char mtime[8];
+  char filesize[8];
+  char devmajor[8];
+  char devminor[8];
+  char rdevmajor[8];
+  char rdevminor[8];
+  char namesize[8];
+  char check[8];
+};
+
+static bool streq(char* left, char* right, unsigned length) {
+  for (unsigned i = 0; i < length; i++) {
     if (left[i] != right[i]) {
-      return true;
+      return false;
     }
   }
-  return false;
+  return true;
 }
 
-int cpio_hex2dec(char* str) {
-  int num = 0;
-  for (int i = 0; i < 8; i++) {
+static unsigned hex2uint(char* str) {
+  unsigned num = 0;
+  for (unsigned i = 0; i < 8; i++) {
     num *= 16;
     if (str[i] >= '0' && str[i] <= '9') {
       num += str[i] - '0';
@@ -25,12 +44,22 @@ int cpio_hex2dec(char* str) {
   return num;
 }
 
-void* cpio_open(void* addr, char* filename) {
+struct cpio_file cpio_open(void* address, char* filename) {
+  struct cpio_file file = {.address = NULL, .size = 0};
   while (true) {
-    if (!cpio_memcmp(addr, "070701")) {
+    if (!streq(address, "070701", 6)) {
       break;
     }
-    // cpio_header* header = (cpio_header*)addr;
+    struct header* stat = (struct header*)address;
+    void* name = address + sizeof(struct header);
+    unsigned namesize = hex2uint(stat->namesize);
+    void* data = name + namesize + (4 - (namesize + 2) % 4) % 4;
+    if (streq(name, filename, namesize)) {
+      file.address = data;
+      file.size = hex2uint(stat->filesize);
+      break;
+    }
+    address = data + hex2uint(stat->filesize);
   }
-  return NULL;
+  return file;
 }

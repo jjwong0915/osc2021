@@ -4,6 +4,8 @@
         "uart.h": "c",
         "memory.h": "c",
         "printf.h": "c",
-        "stdbool.h": "c"
+        "stdbool.h": "c",
+        "page.h": "c",
+        "cpio.h": "c"
     }
 }
