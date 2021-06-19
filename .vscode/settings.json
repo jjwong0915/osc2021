@@ -6,6 +6,7 @@
         "printf.h": "c",
         "stdbool.h": "c",
         "page.h": "c",
-        "cpio.h": "c"
+        "cpio.h": "c",
+        "thread": "c"
     }
 }

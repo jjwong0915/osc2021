@@ -1,7 +1,5 @@
 #include "app/app.h"
 
-#include <stddef.h>
-
 #include "page/page.h"
 #include "printf/printf.h"
 
@@ -15,7 +13,7 @@ int app_execute(void* address) {
   asm("msr elr_el1, %0" ::"r"(address));
   // setup stack memory
   app_stack = page_alloc(0);
-  asm("msr sp_el0, %0" ::"r"(app_stack));
+  asm("msr sp_el0, %0" ::"r"(app_stack + PAGE_SIZE));
   // execute
   asm("eret");
   asm("app_execute_end:");

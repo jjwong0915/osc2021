@@ -7,7 +7,6 @@
 #include "printf/printf.h"
 
 #define PAGE_MAX 12
-#define PAGE_SIZE 0x1000
 #define PAGE_BEGIN 0x10000000
 #define PAGE_END 0x40000000
 #define PAGE_CNT ((PAGE_END - PAGE_BEGIN) / PAGE_SIZE)

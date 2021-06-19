@@ -5,10 +5,21 @@
 #include "exception/exception.h"
 #include "page/page.h"
 #include "printf/printf.h"
+#include "thread/thread.h"
 #include "timer/timer.h"
 #include "uart/uart.h"
 
 #define INITFS_ADDR (void*)0x8000000
+
+void foo() {
+  for (unsigned i = 0; i < 10; i++) {
+    printf("thread: %d, i: %d\n", thread_current(), i);
+    for (unsigned j = 0; j < 100000000; j++) {
+      asm("nop");
+    }
+    thread_yield();
+  }
+}
 
 int main() {
   printf("[Init Kernel]\n");
@@ -16,18 +27,12 @@ int main() {
   uart_init();
   page_init();
   timer_init();
-  printf("[Load Program]\n");
-  struct cpio_file executable = cpio_open(INITFS_ADDR, "hello");
-  if (executable.address == NULL) {
-    printf("program file not found\n");
-    return 1;
+  thread_init();
+  printf("[Setup Thread]\n");
+  for (unsigned i = 0; i < 5; i++) {
+    thread_create(foo);
   }
-  void* program = page_alloc(4);
-  for (unsigned i = 0; i < executable.size; i++) {
-    *(char*)(program + i) = *(char*)(executable.address + i);
-  }
-  printf("[Begin Program]\n");
-  int status = app_execute(program);
-  printf("[End Program] status=%d\n", status);
+  printf("[Begin Thread]\n");
+  thread_yield();
   return 0;
 }

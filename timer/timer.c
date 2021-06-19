@@ -9,7 +9,7 @@
 
 void timer_init() {
   // enable timer
-  asm("msr cntp_ctl_el0, %0" ::"r"(0x1));
+  asm("msr cntp_ctl_el0, %0" ::"r"(1));
   // setup remaining time
   timer_reset();
   // enable timer interrupt
