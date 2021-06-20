@@ -5,49 +5,65 @@
 
 #include "page/page.h"
 #include "printf/printf.h"
-#define THREAD_MAX 1024
 
 struct thread {
   void* stack;
-  uint64_t saved[11];
-  uint64_t lr;
-  uint64_t sp;
+  bool exited;
   //
+  void (*function)(void*);
+  void* context;
+  //
+  uint64_t saved[12];
+  uint64_t sp;
+  uint64_t pc;
+  //
+  unsigned prev;
   unsigned next;
 };
 
 struct thread thread_array[THREAD_MAX];
 static unsigned thread_end;
 
-static void idle(void) {
-  while (true) {
-    thread_yield();
-  }
+static void thread_wrapper() {
+  unsigned id = thread_current();
+  printf("[INFO] thread %d entered\n", id);
+  //
+  (*thread_array[id].function)(thread_array[id].context);
+  //
+  thread_exit();
 }
 
 void thread_init() {
-  thread_create(NULL);  // current thread
+  // setup main thread
+  thread_array[0].prev = 0;
+  thread_array[0].next = 0;
+  thread_end = 1;
+  // set current thread as main thread
   asm("msr tpidr_el1, %0" ::"r"(0));
-  thread_create(idle);
 }
 
-void thread_create(void (*func)(void)) {
+unsigned thread_create(void (*function)(void*), void* context) {
   if (thread_end >= THREAD_MAX) {
     return UINT32_MAX;
   }
-  void* stack = page_alloc(0);
-  thread_array[thread_end].stack = stack;
-  for (unsigned i = 0; i < 11; i++) {
-    thread_array[thread_end].saved[i] = 0;
-  }
-  thread_array[thread_end].lr = (uint64_t)func;
-  thread_array[thread_end].sp = (uint64_t)stack + PAGE_SIZE;
-  thread_array[thread_end].next = 1;
-  //
-  if (thread_end >= 1) {
-    thread_array[thread_end - 1].next = thread_end;
-  }
+  // add thread
+  unsigned id = thread_end;
+  thread_array[thread_end - 1].next = thread_end;
   thread_end += 1;
+  // setup thread
+  thread_array[id].stack = page_alloc(0);
+  thread_array[id].exited = false;
+  thread_array[id].function = function;
+  thread_array[id].context = context;
+  for (unsigned i = 0; i < 11; i++) {
+    thread_array[id].saved[i] = 0;
+  }
+  thread_array[id].sp = (uint64_t)thread_array[id].stack + PAGE_SIZE;
+  thread_array[id].pc = (uint64_t)thread_wrapper;
+  thread_array[id].prev = id - 1;
+  thread_array[id].next = 0;  // main thread
+  //
+  return id;
 }
 
 unsigned thread_current() {
@@ -58,7 +74,6 @@ unsigned thread_current() {
 
 void thread_yield() {
   unsigned id = 0;
-  uint64_t lr = 0;
   asm("mrs %0, tpidr_el1" : "=r"(id));
   asm("mov %0, x19" : "=r"(thread_array[id].saved[0]));
   asm("mov %0, x20" : "=r"(thread_array[id].saved[1]));
@@ -71,12 +86,13 @@ void thread_yield() {
   asm("mov %0, x27" : "=r"(thread_array[id].saved[8]));
   asm("mov %0, x28" : "=r"(thread_array[id].saved[9]));
   asm("mov %0, x29" : "=r"(thread_array[id].saved[10]));
-  asm("mov %0, lr" : "=r"(lr));
-  asm("ldr %0, =thread_yield_end" : "=r"(thread_array[id].lr));
+  asm("mov %0, x30" : "=r"(thread_array[id].saved[11]));
   asm("mov %0, sp" : "=r"(thread_array[id].sp));
+  asm("ldr %0, =thread_yield_end" : "=r"(thread_array[id].pc));
   //
   unsigned next = thread_array[id].next;
   asm("msr tpidr_el1, %0" ::"r"(next));
+  asm("mov x16, %0" ::"r"(thread_array[next].pc));
   asm("mov x19, %0" ::"r"(thread_array[next].saved[0]));
   asm("mov x20, %0" ::"r"(thread_array[next].saved[1]));
   asm("mov x21, %0" ::"r"(thread_array[next].saved[2]));
@@ -88,10 +104,58 @@ void thread_yield() {
   asm("mov x27, %0" ::"r"(thread_array[next].saved[8]));
   asm("mov x28, %0" ::"r"(thread_array[next].saved[9]));
   asm("mov x29, %0" ::"r"(thread_array[next].saved[10]));
-  asm("mov lr, %0" ::"r"(thread_array[next].lr));
+  asm("mov x30, %0" ::"r"(thread_array[next].saved[11]));
   asm("mov sp, %0" ::"r"(thread_array[next].sp));
-  asm("ret");
+  asm("br x16");
   //
   asm("thread_yield_end:");
-  asm("mov lr, %0" ::"r"(lr));
+}
+
+void thread_exit() {
+  unsigned id = thread_current();
+  // remove this thread from execution chain
+  thread_array[thread_array[id].prev].next = thread_array[id].next;
+  thread_array[thread_array[id].next].prev = thread_array[id].prev;
+  if (id == thread_end) {
+    thread_end -= 1;
+  }
+  // mark this thread as finished
+  thread_array[id].exited = true;
+  printf("[INFO] thread %d exited\n", id);
+  //
+  thread_yield();
+}
+
+void thread_clean() {
+  for (unsigned i = 0; i < thread_end; i++) {
+    if (thread_array[i].exited) {
+      page_free(thread_array[i].stack);
+      thread_array[i].exited = false;
+      printf("[INFO] thread %d cleaned\n", i);
+    }
+  }
+}
+
+unsigned thread_copy(unsigned id) {
+  printf("[INFO] thread copy %d\n", id);
+  unsigned new_id =
+      thread_create(thread_array[id].function, thread_array[id].context);
+  // copy resources
+  for (unsigned i = 0; i < PAGE_SIZE; i++) {
+    *(char*)(thread_array[new_id].stack + i) =
+        *(char*)(thread_array[id].stack + i);
+  }
+  for (unsigned i = 0; i < 12; i++) {
+    thread_array[new_id].saved[i] = thread_array[id].saved[i];
+  }
+  //
+  unsigned sp = 0;
+  asm("mov %0, sp" : "=r"(sp));
+  thread_array[new_id].sp = (uint64_t)thread_array[new_id].stack +
+                            (sp - (uint64_t)thread_array[id].stack);
+  asm("ldr %0, =thread_copy_end" : "=r"(thread_array[new_id].pc));
+  //
+  thread_yield();
+  asm("thread_copy_end:");
+  return new_id;
 }

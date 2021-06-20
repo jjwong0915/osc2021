@@ -1,0 +1,23 @@
+#include "printf/printf.h"
+#include "syscall/syscall.h"
+
+int main(void) {
+  printf("Fork Test, pid %d\n", getpid());
+  int cnt = 1;
+  int ret = 0;
+  if ((ret = fork()) == 0) {  // child
+    printf("pid: %d, cnt: %d, ptr: %p\n", getpid(), cnt, &cnt);
+    ++cnt;
+    fork();
+    while (cnt < 5) {
+      printf("pid: %d, cnt: %d, ptr: %p\n", getpid(), cnt, &cnt);
+      for (unsigned i = 0; i < 10000000; i++) {
+        asm("nop");
+      }
+      ++cnt;
+    }
+  } else {
+    printf("parent here, pid %d, child %d\n", getpid(), ret);
+  }
+  return 0;
+}

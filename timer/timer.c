@@ -19,5 +19,5 @@ void timer_init() {
 void timer_reset() {
   unsigned frequency = 0;
   asm("mrs %0, cntfrq_el0" : "=r"(frequency));
-  asm("msr cntp_tval_el0, %0" ::"r"(frequency * 2));
+  asm("msr cntp_tval_el0, %0" ::"r"(frequency));
 }

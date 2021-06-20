@@ -18,9 +18,17 @@
     stp x26, x27, [sp, -16]!
     stp x28, x29, [sp, -16]!
     stp x30, xzr, [sp, -16]!
+    //
+    mrs x16, spsr_el1
+    mrs x17, elr_el1
+    stp x16, x17, [sp, -16]!
 .endm
 
 .macro load_regs
+    ldp x16, x17, [sp], 16
+    msr elr_el1, x17
+    msr spsr_el1, x16
+    //
     ldp x30, xzr, [sp], 16
     ldp x28, x29, [sp], 16
     ldp x26, x27, [sp], 16

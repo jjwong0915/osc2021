@@ -61,5 +61,12 @@ struct cpio_file cpio_open(void* address, char* filename) {
     }
     address = data + hex2uint(stat->filesize);
   }
+  if (file.address == NULL) {
+    printf("[ERROR] file \"%s\" not found\n", filename);
+    // pause execution
+    while (true) {
+      asm("nop");
+    }
+  }
   return file;
 }
