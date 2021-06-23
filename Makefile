@@ -40,8 +40,12 @@ user/fork_test: user/start.o user/fork_test.o printf/printf.o syscall/syscall.o
 	$(LD) -nostdlib -Ttext=0x80000 -o user/fork_test.elf user/start.o user/fork_test.o printf/printf.o syscall/syscall.o
 	$(CP) -O binary user/fork_test.elf user/fork_test
 
-initfs: user/argv_test user/fork_test
-	echo 'argv_test\nfork_test' | cpio -o -H newc -D 'user' > initfs
+user/tmpfs_test: user/start.o user/tmpfs_test.o printf/printf.o syscall/syscall.o
+	$(LD) -nostdlib -Ttext=0x80000 -o user/tmpfs_test.elf user/start.o user/tmpfs_test.o printf/printf.o syscall/syscall.o
+	$(CP) -O binary user/tmpfs_test.elf user/tmpfs_test
+
+initfs: user/argv_test user/fork_test user/tmpfs_test
+	echo 'argv_test\nfork_test\ntmpfs_test' | cpio -o -H newc -D 'user' > initfs
 
 run: all
 	qemu-system-aarch64 \

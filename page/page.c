@@ -3,12 +3,13 @@
 #include <limits.h>
 #include <stdbool.h>
 #include <stddef.h>
+#include <stdint.h>
 
 #include "printf/printf.h"
 
-#define PAGE_MAX (12)
-#define PAGE_BEGIN (0x10000000)
-#define PAGE_END (0x40000000)
+#define PAGE_MAX ((unsigned)12)
+#define PAGE_BEGIN ((uint64_t)0x10000000)
+#define PAGE_END ((uint64_t)0x40000000)
 #define PAGE_CNT ((PAGE_END - PAGE_BEGIN) / PAGE_SIZE)
 
 struct page {

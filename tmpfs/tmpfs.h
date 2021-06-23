@@ -1,0 +1,1 @@
+void tmpfs_init();

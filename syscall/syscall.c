@@ -19,7 +19,7 @@ char uart_getc() {
   return result;
 }
 
-int exec(char* name, char* const argv[]) {
+int exec(char* name, char** argv) {
   struct syscall_exec context = {.name = name, .argv = argv, .result = 0};
   asm("mov x0, %0" ::"r"(&context));
   asm("svc 3");
@@ -33,4 +33,33 @@ unsigned fork() {
   asm("mov x0, %0" ::"r"(&result));
   asm("svc 5");
   return result;
+}
+
+unsigned open(char* pathname, unsigned flags) {
+  struct syscall_open context = {
+      .pathname = pathname, .flags = flags, .result = 0};
+  asm("mov x0, %0" ::"r"(&context));
+  asm("svc 6");
+  return context.result;
+}
+
+void close(unsigned fd) {
+  asm("mov x0, %0" ::"r"(&fd));
+  asm("svc 7");
+}
+
+unsigned read(unsigned fd, unsigned size, void* buffer) {
+  struct syscall_read context = {
+      .fd = fd, .size = size, .buffer = buffer, .result = 0};
+  asm("mov x0, %0" ::"r"(&context));
+  asm("svc 8");
+  return context.result;
+}
+
+unsigned write(unsigned fd, unsigned size, void* buffer) {
+  struct syscall_write context = {
+      .fd = fd, .size = size, .buffer = buffer, .result = 0};
+  asm("mov x0, %0" ::"r"(&context));
+  asm("svc 9");
+  return context.result;
 }

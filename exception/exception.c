@@ -21,12 +21,25 @@ static void handle_syscall(unsigned number, void* context) {
     *(char*)context = uart_getc();
   } else if (number == 3) {
     struct syscall_exec* exec_ctx = (struct syscall_exec*)context;
-    int (*func)(int, char* const*) = program_load(exec_ctx->name);
+    int (*func)(int, char**) = program_load(exec_ctx->name);
     exec_ctx->result = func(program_argc(exec_ctx->argv), exec_ctx->argv);
   } else if (number == 4) {
     process_exit();
   } else if (number == 5) {
     *(unsigned*)context = process_fork();
+  } else if (number == 6) {
+    struct syscall_open* open_ctx = (struct syscall_open*)context;
+    open_ctx->result = process_open(open_ctx->pathname, open_ctx->flags);
+  } else if (number == 7) {
+    process_close(*(unsigned*)context);
+  } else if (number == 8) {
+    struct syscall_read* read_ctx = (struct syscall_read*)context;
+    read_ctx->result =
+        process_read(read_ctx->fd, read_ctx->size, read_ctx->buffer);
+  } else if (number == 9) {
+    struct syscall_write* write_ctx = (struct syscall_write*)context;
+    write_ctx->result =
+        process_write(write_ctx->fd, write_ctx->size, write_ctx->buffer);
   }
 }
 

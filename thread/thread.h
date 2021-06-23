@@ -1,4 +1,4 @@
-#define THREAD_MAX (65536)
+#define THREAD_MAX ((unsigned)65536)
 
 void thread_init();
 unsigned thread_create(void (*function)(void*), void* context);

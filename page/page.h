@@ -1,4 +1,6 @@
-#define PAGE_SIZE (0x1000)
+#include <stdint.h>
+
+#define PAGE_SIZE ((uint64_t)0x1000)
 
 void page_init();
 void* page_alloc(unsigned order);

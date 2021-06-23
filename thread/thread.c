@@ -44,7 +44,10 @@ void thread_init() {
 
 unsigned thread_create(void (*function)(void*), void* context) {
   if (thread_end >= THREAD_MAX) {
-    return UINT32_MAX;
+    printf("[ERROR] thread maximum number exceeded");
+    while (true) {
+      asm("nop");
+    }
   }
   // add thread
   unsigned id = thread_end;

@@ -6,7 +6,9 @@
 #include "process/process.h"
 #include "thread/thread.h"
 #include "timer/timer.h"
+#include "tmpfs/tmpfs.h"
 #include "uart/uart.h"
+#include "vfs/vfs.h"
 
 void test() {
   char* argv[] = {"argv_test", "-o", "arg2", NULL};
@@ -23,15 +25,14 @@ void idle() {
 void main() {
   printf("[INFO] kernel init\n");
   exception_init();
-  timer_init();
   page_init();
-  thread_init();
   process_init();
+  thread_init();
+  timer_init();
+  tmpfs_init();
   uart_init();
-  //
-  printf("[INFO] test create\n");
-  thread_create(test, NULL);
-  //
+  printf("[INFO] kernel run tmpfs_test");
+  process_run("tmpfs_test", NULL);
   printf("[INFO] kernel idle\n");
   idle();
 }

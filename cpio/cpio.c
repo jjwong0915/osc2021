@@ -51,7 +51,7 @@ struct cpio_file cpio_open(void* address, char* filename) {
       break;
     }
     struct header* stat = (struct header*)address;
-    void* name = address + sizeof(struct header);
+    char* name = address + sizeof(struct header);
     unsigned namesize = hex2uint(stat->namesize);
     void* data = name + namesize + (4 - (namesize + 2) % 4) % 4;
     if (streq(name, filename, namesize)) {
@@ -62,11 +62,39 @@ struct cpio_file cpio_open(void* address, char* filename) {
     address = data + hex2uint(stat->filesize);
   }
   if (file.address == NULL) {
-    printf("[ERROR] file \"%s\" not found\n", filename);
+    printf("[ERROR] cpio file \"%s\" not found\n", filename);
     // pause execution
     while (true) {
       asm("nop");
     }
   }
   return file;
+}
+
+void cpio_list(void* address, char buffer[CPIO_FILE_MAX][CPIO_NAME_MAX]) {
+  unsigned file_idx = 0;
+  while (file_idx < CPIO_FILE_MAX - 1) {
+    if (!streq(address, "070701", 6)) {
+      break;
+    }
+    struct header* stat = (struct header*)address;
+    char* name = address + sizeof(struct header);
+    unsigned namesize = hex2uint(stat->namesize);
+    void* data = name + namesize + (4 - (namesize + 2) % 4) % 4;
+    //
+    if (streq(name, "TRAILER!!!", 10)) {
+      break;
+    }
+    //
+    unsigned i = 0;
+    while (i < namesize && i < CPIO_NAME_MAX - 1) {
+      buffer[file_idx][i] = name[i];
+      i += 1;
+    }
+    buffer[file_idx][i] = '\0';
+    file_idx += 1;
+    //
+    address = data + hex2uint(stat->filesize);
+  }
+  buffer[file_idx][0] = '\0';
 }

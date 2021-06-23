@@ -10,7 +10,7 @@
 void* program_load(char* name) {
   struct cpio_file executable = cpio_open(INITFS_ADDR, name);
   if (executable.size > (PAGE_SIZE << 5)) {
-    printf("[ERROR] try to load executable bigger than 32 pages");
+    printf("[ERROR] program executable is bigger than 32 pages");
     while (true) {
       asm("nop");
     }
@@ -23,7 +23,7 @@ void* program_load(char* name) {
   return program_memory;
 }
 
-int program_argc(char* const* argv) {
+int program_argc(char** argv) {
   int argc = 0;
   if (argv != NULL) {
     while (argv[argc] != NULL) {
