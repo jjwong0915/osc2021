@@ -18,6 +18,9 @@
         "new": "c",
         "ostream": "c",
         "sstream": "c",
-        "streambuf": "c"
+        "streambuf": "c",
+        "fat32.h": "c",
+        "printf.h": "c",
+        "thread.h": "c"
     }
 }

@@ -24,7 +24,7 @@ struct tmpfs_internal {
   void* data;
 };
 
-static struct vfs_node* setup(struct vfs_backend* self);
+static struct vfs_node* setup();
 static struct vfs_backend backend = {
     .name = "tmpfs",
     .setup = &setup,
@@ -137,7 +137,7 @@ static struct vfs_node* create(struct vfs_node* self, char* name) {
   return node;
 }
 
-struct vfs_node* setup(struct vfs_backend* self) {
+struct vfs_node* setup() {
   if (node_end >= TMPFS_NODE_MAX) {
     printf("[ERROR] tmpfs node maximum exceeded\n");
     while (true) {

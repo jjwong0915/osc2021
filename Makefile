@@ -52,6 +52,7 @@ run: all
 		-machine raspi3 \
 		-kernel kernel/kernel8.img \
 		-initrd initfs \
+		-drive file=sfn_nctuos.img,if=sd,format=raw \
 		-display none \
 		-serial null -serial stdio
 
@@ -60,6 +61,7 @@ debug: all
 		-machine raspi3 \
 		-kernel kernel/kernel8.img \
 		-initrd initfs \
+		-drive file=sfn_nctuos.img,if=sd,format=raw \
 		-display none \
 		-serial null -serial stdio \
 		-s -S

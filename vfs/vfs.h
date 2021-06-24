@@ -16,7 +16,7 @@ struct vfs_node {
 
 struct vfs_backend {
   char* name;
-  struct vfs_node* (*setup)(struct vfs_backend* self);
+  struct vfs_node* (*setup)();
 };
 
 struct vfs_file {

@@ -26,7 +26,7 @@ void vfs_register(struct vfs_backend* backend) {
   backend_end += 1;
   //
   if (root == NULL) {
-    root = backend->setup(backend);
+    root = backend->setup();
   }
 }
 
